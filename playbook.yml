@@ -52,12 +52,18 @@
       pip:
         name: docker
         state: latest
+    - name: Set env variables
+      set_fact:
+        env_vars:
+          CATTLE_AGENT_IP: "{{ host_ip }}"
+          COMPUTE: "{{ compute|default()|bool }}"
+          ETCD: "{{ etcd|default()|bool }}"
+          ORCHESTRATION: "{{ orchestration|default()|bool }}"
     - name: Create rancher agent container
       docker_container:
         name: rancher_agent
         image: "{{ rancher_image }}"
-        env:
-          CATTLE_AGENT_IP="{{ host_ip }}""
+        env: "{{ env_vars }}"
         privileged: yes
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
