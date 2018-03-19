@@ -1,0 +1,65 @@
+---
+- hosts: kube
+  remote_user: beto
+  become: yes
+  become_method: sudo
+  vars:
+    host_ip: "{{ ansible_enp0s3.ipv4.address }}"
+    rancher_agent_command: http://192.168.1.141:8080/v1/scripts/88F8838FF696FC070C7B:1514678400000:fpwu2nj4MCF2E02dzIRf1Odwgn4
+    user_name: beto
+    docker_url: https://releases.rancher.com/install-docker/1.12.sh
+    rancher_image: rancher/agent:v1.2.9
+  tasks:
+    - name: update apt; autoremoves old
+      apt:
+        update_cache: yes
+        autoremove: yes
+    - name: remove docker version
+      apt:
+        name: docker-engine
+        state: absent
+        purge: yes
+        autoremove: yes
+    - name: install pip
+      apt:
+        name: python-pip
+        state: latest
+    - name: stop all containers and kill any rancher agent daemons
+      script: ./scripts/nuke-rancher.sh
+      ignore_errors: yes
+    - name: unmount docker artifacts
+      mount:
+        path: /var/lib/docker/aufs
+        state: unmounted
+    - name: remove docker artifacts
+      file:
+        path: /var/lib/docker
+        state: absent
+    - name: remove rancher artifacts
+      file:
+        path: /var/etcd/backups
+      ignore_errors: yes
+    - name: Download docker-engine install script
+      get_url:
+        url: "{{ docker_url }}"
+        dest: /tmp/docker_install.sh
+        mode: 755
+    - name: Install docker engine
+      command: /tmp/docker_install.sh
+    - name: Add docker user to group for no sudo
+      command: usermod -aG docker "{{ user_name }}"
+    - name: install python docker package
+      pip:
+        name: docker
+        state: latest
+    - name: Create rancher agent container
+      docker_container:
+        name: rancher_agent
+        image: "{{ rancher_image }}"
+        env:
+          CATTLE_AGENT_IP="{{ host_ip }}""
+        privileged: yes
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - /var/lib/rancher:/var/lib/rancher
+        command: "{{ rancher_agent_command }}"
