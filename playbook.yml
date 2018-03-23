@@ -56,10 +56,9 @@
       set_fact:
         env_vars:
           CATTLE_AGENT_IP: "{{ host_ip }}"
-          CATTLE_HOST_LABELS: >
-            compute={{ compute|default()|bool }}&
-            etcd={{ etcd|default()|bool }}&
-            orchestration={{ orchestration|default()|bool }}
+          CATTLE_HOST_LABELS: "compute={{ compute|default()|bool }}&\
+            etcd={{ etcd|default()|bool }}&\
+            orchestration={{ orchestration|default()|bool }}"
     - name: Create rancher agent container
       docker_container:
         name: rancher_agent
