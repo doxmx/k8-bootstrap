@@ -1,4 +1,4 @@
 [kube]
-192.168.1.85
-192.168.1.86
-192.168.1.89
+192.168.1.85 compute=true
+192.168.1.86 orquestration=true
+192.168.1.89 orquestration=true etcd=true
